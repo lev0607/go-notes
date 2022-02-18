@@ -1,12 +1,20 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 )
 
 func main() {
+
+	addr := flag.String("addr", ":4000", "Сетевой адрес веб-сервера")
+	flag.Parse()
+
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", home)
@@ -16,8 +24,10 @@ func main() {
 	fileServer := http.FileServer(neuteredFileSystem{http.Dir("./static")})
 	mux.Handle("/static", http.NotFoundHandler())
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	err := http.ListenAndServe(":8080", mux)
-	log.Fatal(err)
+
+	infoLog.Printf("Запуск сервера на %s", *addr)
+	err := http.ListenAndServe(*addr, mux)
+	errorLog.Fatal(err)
 }
 
 type neuteredFileSystem struct {
